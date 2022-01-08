@@ -1,0 +1,821 @@
+{
+	"info": {
+		"_postman_id": "cc5ab6f4-d47f-44b6-a2b4-2e5163a07224",
+		"name": "ABHAuctionApp-smokeTest",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create user account and log in",
+			"item": [
+				{
+					"name": "User signup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"User signed up successfully Mesage\", () =>{\r",
+									"    pm.expect(response.message).to.eql(\"User successfully registered\");\r",
+									"})"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var repoEmail = pm.variables.replaceIn('{{$randomEmail}}');\r",
+									"var repoFirstName = pm.variables.replaceIn('{{$randomFirstName}}');\r",
+									"var repoLastName = pm.variables.replaceIn('{{$randomLastName}}');\r",
+									"\r",
+									"pm.environment.set(\"userEmail\", repoEmail );\r",
+									"pm.environment.set(\"userFirstName\",repoFirstName);\r",
+									"pm.environment.set(\"userLastName\",repoLastName);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"{{userEmail}}\",\r\n    \"password\": \"12345\",\r\n    \"firstName\": \"{{userFirstName}}\",\r\n    \"lastName\": \"{{userLastName}}\",\r\n    \"phoneNumber\": \"{{$randomPhoneNumber}}\",\r\n    \"role\": [\"user\",\"seller\"]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/auth/signup",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"pm.environment.set(\"userId\", response.id);\r",
+									"pm.environment.set(\"userRefreshToken\", response.refreshToken);\r",
+									"\r",
+									"pm.test(\"User Credentials check\", () => {\r",
+									"    pm.expect(response.email,\"User email\").to.eql(pm.variables.replaceIn('{{userEmail}}'));\r",
+									"    pm.expect(response.firstName,\"User First Name\").to.eql(pm.variables.replaceIn('{{userFirstName}}'));\r",
+									"    pm.expect(response.lastName,\"Users Last Name\").to.eql(pm.variables.replaceIn('{{userLastName}}'));\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"{{userEmail}}\",\r\n    \"password\": \"12345\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/auth/signin",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh JWT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"pm.environment.set(\"userAccessToken\", response.accessToken);\r",
+									"\r",
+									"pm.test(\"Correct token response\", () => {\r",
+									"    pm.expect(response.refreshToken,\"Refresh token\").to.eql(pm.variables.replaceIn('{{userRefreshToken}}'));\r",
+									"    pm.expect(response.tokenType,\"Token Type\").to.eql(\"Bearer\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refreshToken\": \"{{userRefreshToken}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/auth/refreshtoken",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"refreshtoken"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Filter fashion and place bid",
+			"item": [
+				{
+					"name": "Get filtered items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"pm.test(\"Items Category and Subcategory match\", () => {\r",
+									"    for ( let i = 0; i < response.length; i++){\r",
+									"        pm.expect(response[i].category,\"Category Type\").to.eql(\"Sportswear\");\r",
+									"        pm.expect(response[i].subcategory,\"Subcategory Type\").to.eql(\"Female\");\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Auction not expired\", () => {\r",
+									"    for ( let i = 0; i < response.length; i++){\r",
+									"        pm.expect(moment(response[i].endTime,'YYYY-MM-DD').unix(),\"Auction end\").to.greaterThan(moment().unix());\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Item images are unique\", () => {\r",
+									"    for ( let i = 0; i < response.length; i++){\r",
+									"        for( let j = 0; j < response[i].images.length; j++){\r",
+									"            for(let k = 0; k < response[i].images.length; k++){\r",
+									"                if(j != k)\r",
+									"                    pm.expect(response[i].images[k],\"Current Img\").to.not.eql(response[i].images[j]);\r",
+									"            }\r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/item/search?category=&subcategory=Sportswear/Female&minPrice=0&maxPrice=0&search=&sortBy=PRICE_SORT&direction=ASC&pageNumber=0&pageSize=1000",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"item",
+								"search"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "subcategory",
+									"value": "Sportswear/Female"
+								},
+								{
+									"key": "minPrice",
+									"value": "0"
+								},
+								{
+									"key": "maxPrice",
+									"value": "0"
+								},
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "sortBy",
+									"value": "PRICE_SORT"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								},
+								{
+									"key": "pageNumber",
+									"value": "0"
+								},
+								{
+									"key": "pageSize",
+									"value": "1000"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get single item data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.collectionVariables.set(\"ItemHighestBid\", response.highestBid);\r",
+									"pm.collectionVariables.set(\"ItemBidCount\", response.numberOfBids);\r",
+									"\r",
+									"pm.test(\"Bid price higher than starting price\", () => {\r",
+									"    pm.expect(response.startingPrice,\"Starting price\").to.lessThan(response.highestBid);\r",
+									"});\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/item/:itemId",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"item",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "8",
+									"description": "Metal Band shirts"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Place bid",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var currentBid = pm.variables.replaceIn('{{ItemHighestBid}}')\r",
+									"\r",
+									"pm.collectionVariables.set(\"ItemHighestBid\",Number(currentBid) + 2);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Bid submited Mesage\", () => {\r",
+									"    pm.expect(response.message).to.eql(\"Congrats! You are the highest bidder\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{userAccessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": {{ItemHighestBid}}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/bid/place/:itemId",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bid",
+								"place",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "8",
+									"description": "Metal Band shirts"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Count number of bids",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Bid Counter increase after successful bid\", () => {\r",
+									"    pm.expect(Number(pm.variables.replaceIn('{{ItemBidCount}}')),\"Old bid count\").to.lessThan(response)\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/bid/count/:itemId",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bid",
+								"count",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "8",
+									"description": "Metal Band shirts"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Search jacket and place bid",
+			"item": [
+				{
+					"name": "Get filtered items Search item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"var moment = require('moment');\r",
+									"\r",
+									"pm.test(\"Items has search term in name\", () => {\r",
+									"    for ( let i = 0; i < response.length; i++){\r",
+									"        pm.expect(response[i].name).contains(\"jacket\");\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Auction not expired\", () => {\r",
+									"    for ( let i = 0; i < response.length; i++){\r",
+									"        pm.expect(moment(response[i].endTime,'YYYY-MM-DD').unix(),\"Auction end\").to.greaterThan(moment().unix());\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									"pm.test(\"Item images are unique\", () => {\r",
+									"    for ( let i = 0; i < response.length; i++){\r",
+									"        for( let j = 0; j < response[i].images.length; j++){\r",
+									"            for(let k = 0; k < response[i].images.length; k++){\r",
+									"                if(j != k)\r",
+									"                    pm.expect(response[i].images[k],\"Current Img\").to.not.eql(response[i].images[j]);\r",
+									"            }\r",
+									"        }\r",
+									"    }\r",
+									"});\r",
+									"\r",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/item/search?category=&subcategory=&minPrice=0&maxPrice=0&search=jacket&sortBy=DEFAULT_SORT&direction=DESC&pageNumber=0&pageSize=1000",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"item",
+								"search"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": ""
+								},
+								{
+									"key": "subcategory",
+									"value": ""
+								},
+								{
+									"key": "minPrice",
+									"value": "0"
+								},
+								{
+									"key": "maxPrice",
+									"value": "0"
+								},
+								{
+									"key": "search",
+									"value": "jacket"
+								},
+								{
+									"key": "sortBy",
+									"value": "DEFAULT_SORT"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								},
+								{
+									"key": "pageNumber",
+									"value": "0"
+								},
+								{
+									"key": "pageSize",
+									"value": "1000"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get single item data from Search item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.collectionVariables.set(\"ItemHighestBid\", response.highestBid);\r",
+									"pm.collectionVariables.set(\"ItemBidCount\", response.numberOfBids);\r",
+									"\r",
+									"pm.test(\"Bid price higher than starting price\", () => {\r",
+									"    pm.expect(response.startingPrice,\"Starting price\").to.lessThan(response.highestBid);\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/item/:itemId",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"item",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "7",
+									"description": "Sashiko Denim jacket"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Place bid Search item",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var currentBid = pm.variables.replaceIn('{{ItemHighestBid}}')\r",
+									"\r",
+									"pm.collectionVariables.set(\"ItemHighestBid\",Number(currentBid) + 2);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Bid submited Mesage\", () => {\r",
+									"    pm.expect(response.message).to.eql(\"Congrats! You are the highest bidder\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{userAccessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"amount\": {{ItemHighestBid}}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/bid/place/:itemId",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bid",
+								"place",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "7",
+									"description": "Sashiko Denim jacket"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Count number of bids Search item",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"Bid Counter increase after successful bid\", () => {\r",
+									"    pm.expect(Number(pm.variables.replaceIn('{{ItemBidCount}}')),\"Old bid count\").to.lessThan(response)\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/v1/bid/count/:itemId",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"bid",
+								"count",
+								":itemId"
+							],
+							"variable": [
+								{
+									"key": "itemId",
+									"value": "7",
+									"description": "Sashiko Denim jacket"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Log out user",
+			"item": [
+				{
+					"name": "Logout user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {\r",
+									"    pm.response.to.have.status(200);\r",
+									"});\r",
+									"\r",
+									"const response = pm.response.json();\r",
+									"\r",
+									"pm.test(\"User loged out successfully Mesage\", () => {\r",
+									"    pm.expect(response.message).to.eql(\"Log out successful!\");\r",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"userId\": {{userId}}\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrlABHA}}/api/auth/logout",
+							"host": [
+								"{{baseUrlABHA}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrlABHA",
+			"value": "https://abh-auction-api.herokuapp.com"
+		},
+		{
+			"key": "ItemHighestBid",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "ItemBidCount",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
